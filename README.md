@@ -4,7 +4,7 @@ Built with [Python Flask](http://flask.pocoo.org/).
 
 > Based on [mrpatiwi/flask-starter](https://github.com/mrpatiwi/flask-starter)
 
-[![wercker status](https://app.wercker.com/status/d1ef9c42121ef910ba27a90ac6fc78b8/s "wercker status")](https://app.wercker.com/project/bykey/d1ef9c42121ef910ba27a90ac6fc78b8)
+[![wercker status](https://app.wercker.com/status/36b13e641a708e7a80e969d0fcd01338/s/master "wercker status")](https://app.wercker.com/project/bykey/36b13e641a708e7a80e969d0fcd01338)
 
 ## Running
 
