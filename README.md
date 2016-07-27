@@ -14,7 +14,7 @@ Clone this repository:
 git clone https://github.com/ACM-Planner/main-api.git
 ```
 
-Set environment variables
+Set environment variables:
 
 ```sh
 export RDF_URI=http://localhost:3030
@@ -22,6 +22,8 @@ export RDF_STORE=store
 export RDF_USER=admin
 export RDF_PASSWORD=pw
 ```
+
+> Check [ACM-Planner/RDF-store](https://github.com/ACM-Planner/RDF-store) to run a local instance of a HTTP RDF Store.
 
 ### Development
 
