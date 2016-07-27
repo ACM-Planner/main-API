@@ -1,4 +1,17 @@
+import os
+import rdflib
+import urllib.parse
 from flask import Flask, Response, request, jsonify
+
+RDF_URI = os.getenv('RDF_URI', 'http://localhost:3030')
+RDF_STORE = os.getenv('RDF_STORE', 'store')
+RDF_USER = os.getenv('RDF_USER', 'admin')
+RDF_PASSWORD = os.getenv('RDF_PASSWORD', 'pw')
+
+RDF_URI_GET = urllib.parse.urljoin(RDF_URI, RDF_STORE, 'sparql')
+# -> http://localhost:3030/store/sparql
+RDF_URI_UPDATE = urllib.parse.urljoin(RDF_URI, RDF_STORE, 'update')
+# -> http://localhost:3030/store/update
 
 # Links:
 # https://rdflib.github.io/sparqlwrapper/
@@ -7,97 +20,42 @@ from flask import Flask, Response, request, jsonify
 # https://github.com/RDFLib/rdflib-sparqlstore/blob/master/test/test_sparql11.py
 # http://rdflib.readthedocs.io/en/stable/intro_to_sparql.html
 
-# from SPARQLWrapper import SPARQLWrapper, JSON
-#
-# RDF_ENDPOINT = "http://192.168.99.100:3030/test/query"
-#
-# sparql = SPARQLWrapper(RDF_ENDPOINT)
-# sparql.setReturnFormat(JSON)
-#
-# # add a default graph, though that can also be part of the query string
-# # sparql.addDefaultGraph("http://www.example.com/data.rdf")
-#
-# queryString = "SELECT * WHERE { ?s ?p ?o. }"
-# sparql.setQuery(queryString)
-#
-# try:
-#     result = sparql.query().convert()
-#     print(result)
-# except Exception as e:
-#     print(e)
+# Setup RDF endpoint
+graph = rdflib.ConjunctiveGraph('SPARQLUpdateStore')
+graph.store.setCredentials(RDF_USER, RDF_PASSWORD)
+graph.store.setHTTPAuth('DIGEST')
+graph.open((RDF_URI_GET, RDF_URI_UPDATE))
 
-# -----------------------
-
-# from rdflib import ConjunctiveGraph, URIRef
-#
-# graphuri = URIRef('urn:default')
-#
-# graph = ConjunctiveGraph('SPARQLUpdateStore')
-# root = "http://192.168.99.100:3030/test/"
-# graph.open((root + "query", root + "update"))
-#
-# g = graph.get_context(graphuri)
-
-# g = rdflib.ConjunctiveGraph('SPARQLUpdateStore')
-
-# -----------------------
-
-import rdflib
-
-graph = rdflib.ConjunctiveGraph('SPARQLStore')
-graph.open("http://192.168.99.100:3030/test/sparql")
-
-qres = graph.query("""
-    SELECT * WHERE { ?s ?p ?o. }
-""")
-
-# See qres (Result) documentation:
-# http://rdflib.readthedocs.io/en/stable/apidocs/rdflib.html#rdflib.query.Result
-
-# As triples
-for s, p, o in qres:
-    print('----------')
-    print('s:', s)
-    print('p:', p)
-    print('o:', o)
-
-# To JSON
-json_string = qres.serialize(format='json')
-print('JSON:', json_string)
-
-
+# Setup Flask app
 app = Flask(__name__)
-
-# In-memory data store
-names = [
-    'Patricio López',
-]
 
 
 @app.route("/")
-def hello():
+def root():
     response = {"status": "on"}
     return jsonify(**response)
 
 
-@app.route('/names', methods=['GET', 'POST'])
+@app.route('/triples')
 def resource_names():
-    if request.method == 'GET':
-        # Return current values
-        return jsonify(names=names)
-
-    elif request.method == 'POST':
-        # Obtain JSON from request body
-        content = request.get_json(silent=True)  # Do not throw exception
-
-        if 'name' in content:
-            names.append(content['name'])
-            # 201 CREATED | https://httpstatuses.com/201
-            return jsonify(name=content['name']), 201
-        else:
-            # 406 NOT ACCEPTABLE | https://httpstatuses.com/406
-            return Response(status=406)
-
-    else:
+    if request.method != 'GET':
         # 501 NOT IMPLEMENTED | https://httpstatuses.com/501
         return Response(status=501)
+
+    # See qres (Result) documentation:
+    # http://rdflib.readthedocs.io/en/stable/apidocs/rdflib.html#rdflib.query.Result
+    qres = graph.query("""
+        SELECT * WHERE { ?s ?p ?o. }
+    """)
+
+    response = []
+
+    # As triples
+    for s, p, o in qres:
+        response.append({'s': s, 'p': p, 'o': o})
+
+    # To JSON
+    # json_string = qres.serialize(format='json')
+    # print('JSON:', json_string)
+
+    return jsonify(triples=response)
