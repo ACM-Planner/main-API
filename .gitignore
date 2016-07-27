@@ -1,5 +1,8 @@
 #### joe made this: http://goel.io/joe
 
+# IDE
+.idea
+
 #####=== Python ===#####
 
 # Byte-compiled / optimized / DLL files
@@ -56,4 +59,3 @@ docs/_build/
 
 # PyBuilder
 target/
-
