@@ -12,7 +12,7 @@ class FlaskrTestCase(unittest.TestCase):
         print('Running set up')
         self.app = app.app.test_client()
 
-    def test_empty_db(self):
+    def test_root_state(self):
         resp = self.app.get('/')
         data = json.loads(resp.data.decode('utf-8'))
         assert data["status"] == "on"

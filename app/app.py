@@ -1,7 +1,7 @@
 import os
 import rdflib
 import urllib.parse
-from flask import Flask, Response, request, jsonify
+from flask import Flask, request, jsonify
 
 from app.middleware.pagination import paginate
 
@@ -38,12 +38,143 @@ def root():
     return jsonify(**response)
 
 
-# /courses/MAT1610
+# GET /courses
+@app.route("/courses", methods=["GET"])
+@paginate()
+def courses():
+    page = request.pagination["page"]
+    offset = request.pagination["offset"]
+    limit = request.pagination["limit"]
+
+    # Period filtering
+    year = request.args.get("year")
+    period = request.args.get("period")
+    if year and period:
+        # Filter by period
+        pass
+    else:
+        # By default do not take care about timeline
+        pass
+
+    # Search options
+    initials = request.args.get("initials")
+    name = request.args.get("name")
+    nrc = request.args.get("nrc")
+    category = request.args.get("category")
+    teacher = request.args.get("teacher")
+    campus = request.args.get("campus")
+    school = request.args.get("school")
+
+    # To satisfy schedule availability
+    include_modules = request.args.get("include_modules")
+    exclude_modules = request.args.get("exclude_modules", [])
+
+    # To satisfy course requisites
+    include_courses = request.args.get("include_courses")
+    exclude_courses = request.args.get("exclude_courses", [])
+
+    data = []
+
+    return jsonify(page=page, offset=offset, limit=limit, data=data)
+
+
+# GET /courses/MAT1610
 @app.route("/courses/<course_id>", methods=["GET"])
 def course(course_id):
-    return jsonify(data={
-        "": ""
-    })
+    data = dict()
+    return jsonify(data=data)
+
+
+# GET /courses/MAT1610/periods
+@app.route("/courses/<course_id>/periods", methods=["GET"])
+@paginate()
+def course_periods(course_id):
+    page = request.pagination["page"]
+    offset = request.pagination["offset"]
+    limit = request.pagination["limit"]
+
+    data = []
+
+    return jsonify(page=page, offset=offset, limit=limit, data=data)
+
+
+# GET /courses/MAT1610/periods/2016/2
+@app.route("/courses/<course_id>/periods/<year>/<period>", methods=["GET"])
+def course_period(course_id, year, period):
+    data = dict()
+    return jsonify(data=data)
+
+
+# GET /courses/MAT1610/periods/2016/2/sections
+@app.route("/courses/<course_id>/periods/<year>/<period>/sections", methods=["GET"])
+@paginate()
+def course_sections(course_id, year, period):
+    page = request.pagination["page"]
+    offset = request.pagination["offset"]
+    limit = request.pagination["limit"]
+
+    data = []
+
+    return jsonify(page=page, offset=offset, limit=limit, data=data)
+
+
+# GET /courses/MAT1610/periods/2016/2/sections/1
+@app.route("/courses/<course_id>/periods/<year>/<period>/sections/<section_id>", methods=["GET"])
+def course_section(course_id, year, period, section_id):
+    data = dict()
+    return jsonify(data=data)
+
+
+# GET /courses/MAT1610/periods/2016/2/sections/1/teachers
+@app.route("/courses/<course_id>/periods/<year>/<period>/sections/<section_id>/teachers", methods=["GET"])
+@paginate()
+def course_section_teachers(course_id, year, period, section_id):
+    page = request.pagination["page"]
+    offset = request.pagination["offset"]
+    limit = request.pagination["limit"]
+
+    data = []
+
+    return jsonify(page=page, offset=offset, limit=limit, data=data)
+
+
+# GET /courses/MAT1610/requisites
+@app.route("/courses/<course_id>/requisites", methods=["GET"])
+@paginate()
+def course_requisites(course_id):
+    page = request.pagination["page"]
+    offset = request.pagination["offset"]
+    limit = request.pagination["limit"]
+
+    data = []
+
+    return jsonify(page=page, offset=offset, limit=limit, data=data)
+
+
+# GET /courses/MAT1610/corequisites
+@app.route("/courses/<course_id>/corequisites", methods=["GET"])
+@paginate()
+def course_corequisites(course_id):
+    page = request.pagination["page"]
+    offset = request.pagination["offset"]
+    limit = request.pagination["limit"]
+
+    data = []
+
+    return jsonify(page=page, offset=offset, limit=limit, data=data)
+
+
+# GET /courses/MAT1610/opens
+@app.route("/courses/<course_id>/opens", methods=["GET"])
+@paginate()
+def course_opens(course_id):
+    page = request.pagination["page"]
+    offset = request.pagination["offset"]
+    limit = request.pagination["limit"]
+
+    data = []
+
+    return jsonify(page=page, offset=offset, limit=limit, data=data)
 
 
 @app.route("/triples", methods=["GET"])
@@ -59,14 +190,14 @@ def resource_names():
         SELECT * WHERE {{ ?s ?p ?o. }} LIMIT {limit} OFFSET {offset}
     """.format(limit=limit, offset=offset))
 
-    # response = []
+    # data = []
     # for s, p, o in qres:
-    #     response.append({"s": s, "p": p, "o": o})
+    #     data.append({"s": s, "p": p, "o": o})
 
-    response = [{"s": s, "p": p, "o": o} for s, p, o in qres]
+    data = [{"s": s, "p": p, "o": o} for s, p, o in qres]
 
     # To JSON
     # json_string = qres.serialize(format="json")
     # print("JSON:", json_string)
 
-    return jsonify(page=page, offset=offset, data=response)
+    return jsonify(page=page, offset=offset, limit=limit, data=data)
