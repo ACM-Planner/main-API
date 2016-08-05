@@ -2,6 +2,7 @@ import os
 import rdflib
 import urllib.parse
 from flask import Flask, request, jsonify
+from flask_cors import CORS, cross_origin
 
 from app.middleware.pagination import paginate
 
@@ -30,6 +31,7 @@ graph.open((RDF_URI_GET, RDF_URI_UPDATE))
 
 # Setup Flask app
 app = Flask(__name__)
+CORS(app)
 
 
 @app.route("/", methods=["GET"])
