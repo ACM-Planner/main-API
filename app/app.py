@@ -40,6 +40,23 @@ def root():
     return jsonify(**response)
 
 
+# GET /periods
+@app.route("/periods", methods=["GET"])
+@paginate()
+def periods():
+    page = request.pagination["page"]
+    offset = request.pagination["offset"]
+    limit = request.pagination["limit"]
+
+    data = [
+        {"year": 2016, "period": "1"},
+        {"year": 2016, "period": "2"},
+        {"year": 2016, "period": "TAV"},
+    ]
+
+    return jsonify(page=page, offset=offset, limit=limit, data=data)
+
+
 # GET /courses
 @app.route("/courses", methods=["GET"])
 @paginate()
@@ -98,13 +115,6 @@ def course_periods(course_id):
     data = []
 
     return jsonify(page=page, offset=offset, limit=limit, data=data)
-
-
-# GET /courses/MAT1610/periods/2016/2
-@app.route("/courses/<course_id>/periods/<year>/<period>", methods=["GET"])
-def course_period(course_id, year, period):
-    data = dict()
-    return jsonify(data=data)
 
 
 # GET /courses/MAT1610/periods/2016/2/sections
