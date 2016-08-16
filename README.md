@@ -2,9 +2,11 @@
 
 Built with [Python Flask](http://flask.pocoo.org/).
 
+[![wercker status](https://app.wercker.com/status/36b13e641a708e7a80e969d0fcd01338/s/master "wercker status")](https://app.wercker.com/project/bykey/36b13e641a708e7a80e969d0fcd01338) [![Docker Pulls](https://img.shields.io/docker/pulls/acmplanner/main-api.svg?maxAge=2592000)](https://hub.docker.com/r/acmplanner/main-api/)
+
+
 > Based on [mrpatiwi/flask-starter](https://github.com/mrpatiwi/flask-starter)
 
-[![wercker status](https://app.wercker.com/status/36b13e641a708e7a80e969d0fcd01338/s/master "wercker status")](https://app.wercker.com/project/bykey/36b13e641a708e7a80e969d0fcd01338)
 
 ## Running
 
