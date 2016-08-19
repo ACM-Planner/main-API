@@ -100,6 +100,42 @@ def courses():
 # GET /courses/MAT1610
 @app.route("/courses/<course_id>", methods=["GET"])
 def course(course_id):
+
+    # Return name and faculty
+    queryBasic = """
+    SELECT ?name ?faculty
+    WHERE {
+    ?x <http://cocke.ing.puc.cl/resource#initial> '{0}'.
+    ?x <http://cocke.ing.puc.cl/resource#name_c> ?name.
+    ?x <http://cocke.ing.puc.cl/resource#faculty> ?faculty.
+    }
+    """.format(course_id)
+
+    # Returns all requisites
+    #  Total length of the requisite group and one of those members
+    # Ex:
+    #( ?total = 1 ) ( ?initial = "FIS1533" )
+    #( ?total = 1 ) ( ?initial = "IEE2113" )
+    #( ?total = 2 ) ( ?initial = "FIZ0221" )
+    #( ?total = 2 ) ( ?initial = "IEE2113" )
+    # is: [["FIS1533"], ["IEE2113"], ["FIZ0221", "IEE2113" ] ]
+    queryRequires = """
+    SELECT  ?initial ?total
+    WHERE{
+       {SELECT ?requires (COUNT(?b) as ?total )
+        WHERE {
+        ?x <http://cocke.ing.puc.cl/resource#initial> '{0}'.
+        ?x <http://cocke.ing.puc.cl/resource#requires> ?requires.
+        ?requires ?a ?b.
+        }
+        GROUP BY ?requires
+        }
+    ?requires ?j ?k.
+    ?k <http://cocke.ing.puc.cl/resource#initial> ?initial.
+    }
+    ORDER BY ?requires
+    """.format(course_id)
+
     data = dict()
     return jsonify(data=data)
 
