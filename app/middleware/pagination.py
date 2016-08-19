@@ -1,5 +1,5 @@
-from functools import wraps
 from flask import request
+from functools import wraps
 from app.errors import InvalidUsage
 
 KEY = "page"

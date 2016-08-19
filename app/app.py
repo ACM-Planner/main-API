@@ -4,8 +4,8 @@ import urllib.parse
 from flask import Flask, request, jsonify
 from flask_cors import CORS, cross_origin
 
-from app.middleware.pagination import paginate
-from app.errors import InvalidUsage
+from .errors import InvalidUsage
+from .middleware.pagination import paginate
 
 RDF_URI = os.getenv('RDF_URI', 'http://localhost:3030')
 RDF_STORE = os.getenv('RDF_STORE', 'store')
