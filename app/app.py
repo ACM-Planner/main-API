@@ -1,8 +1,11 @@
 import os
 import rdflib
 import urllib.parse
+import re
 from flask import Flask, request, jsonify
 from flask_cors import CORS, cross_origin
+
+
 
 from app.middleware.pagination import paginate
 
@@ -31,6 +34,7 @@ graph.open((RDF_URI_GET, RDF_URI_UPDATE))
 
 # Setup Flask app
 app = Flask(__name__)
+app.config['JSON_AS_ASCII'] = False
 CORS(app)
 
 
@@ -111,6 +115,8 @@ def course(course_id):
     }}
     """.format(course_id)
 
+    dataBasic = make_query(queryBasic)
+
     # Returns all requisites
     #  Total length of the requisite group and one of those members
     # Ex:
@@ -119,6 +125,8 @@ def course(course_id):
     #( ?total = 2 ) ( ?initial = "FIZ0221" )
     #( ?total = 2 ) ( ?initial = "IEE2113" )
     # is: [["FIS1533"], ["IEE2113"], ["FIZ0221", "IEE2113" ] ]
+
+    
     queryRequires = """
     SELECT  ?initial ?total
     WHERE{{
@@ -136,6 +144,20 @@ def course(course_id):
     ORDER BY ?requires
     """.format(course_id)
 
+    dataRequires = []
+
+    qres = graph.query(queryRequires)
+    reading = 0
+    list_requisites = []
+    for i in qres:
+        reading += 1
+        list_requisites.append(i[0])
+        if (reading >= int(str(i[1]))):
+            dataRequires.append(list_requisites)
+            reading = 0
+            list_requisites = []
+
+
     queryEquivalent = """
     SELECT  ?initial
     WHERE{{
@@ -145,8 +167,9 @@ def course(course_id):
     }}
     """.format(course_id)
 
-    data = dict()
-    return jsonify(data=data)
+    dataEquivalent = make_query(queryEquivalent)
+
+    return jsonify(data=dataBasic, requisites= dataRequires, equivalent= dataEquivalent)
 
 
 # GET /courses/MAT1610/periods
@@ -258,3 +281,24 @@ def resource_names():
     # print("JSON:", json_string)
 
     return jsonify(page=page, offset=offset, limit=limit, data=data)
+
+
+
+#Return parsed data of the query in a dictionary
+#Doesn't work when using SELECT *
+def make_query(query):
+
+    #makes the query
+    qres = graph.query(query)
+
+    #parse into a dictionary
+    for i in qres:
+        #get columns name of query
+        re_result = re.search("SELECT (.*)\n",query)
+        types = re_result.group(1).strip(" ").split("?")[1:]
+
+        data = dict(zip(types, i))
+        return data
+
+    return dict()
+
