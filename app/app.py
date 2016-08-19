@@ -104,11 +104,11 @@ def course(course_id):
     # Return name and faculty
     queryBasic = """
     SELECT ?name ?faculty
-    WHERE {
+    WHERE {{
     ?x <http://cocke.ing.puc.cl/resource#initial> '{0}'.
     ?x <http://cocke.ing.puc.cl/resource#name_c> ?name.
     ?x <http://cocke.ing.puc.cl/resource#faculty> ?faculty.
-    }
+    }}
     """.format(course_id)
 
     # Returns all requisites
@@ -121,19 +121,28 @@ def course(course_id):
     # is: [["FIS1533"], ["IEE2113"], ["FIZ0221", "IEE2113" ] ]
     queryRequires = """
     SELECT  ?initial ?total
-    WHERE{
-       {SELECT ?requires (COUNT(?b) as ?total )
-        WHERE {
+    WHERE{{
+       {{SELECT ?requires (COUNT(?b) as ?total )
+        WHERE {{
         ?x <http://cocke.ing.puc.cl/resource#initial> '{0}'.
         ?x <http://cocke.ing.puc.cl/resource#requires> ?requires.
         ?requires ?a ?b.
-        }
+        }}
         GROUP BY ?requires
-        }
+        }}
     ?requires ?j ?k.
     ?k <http://cocke.ing.puc.cl/resource#initial> ?initial.
-    }
+    }}
     ORDER BY ?requires
+    """.format(course_id)
+
+    queryEquivalent = """
+    SELECT  ?initial
+    WHERE{{
+    ?x <http://cocke.ing.puc.cl/resource#initial> '{0}' .
+    ?x <http://cocke.ing.puc.cl/resource#equivalent> ?k.
+    ?k <http://cocke.ing.puc.cl/resource#initial> ?initial.
+    }}
     """.format(course_id)
 
     data = dict()
