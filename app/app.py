@@ -1,8 +1,11 @@
 import os
 import rdflib
 import urllib.parse
+import re
 from flask import Flask, request, jsonify
 from flask_cors import CORS, cross_origin
+from app.routes import *
+
 
 from app.middleware.pagination import paginate
 
@@ -31,230 +34,25 @@ graph.open((RDF_URI_GET, RDF_URI_UPDATE))
 
 # Setup Flask app
 app = Flask(__name__)
+app.config['JSON_AS_ASCII'] = False
+app.register_blueprint(routes)
 CORS(app)
 
 
-@app.route("/", methods=["GET"])
-def root():
-    response = {"status": "on"}
-    return jsonify(**response)
+#Return parsed data of the query in a dictionary
+#Doesn't work when using SELECT *
+def make_query(query):
 
+    #makes the query
+    qres = graph.query(query)
 
-# GET /periods
-@app.route("/periods", methods=["GET"])
-@paginate()
-def periods():
-    page = request.pagination["page"]
-    offset = request.pagination["offset"]
-    limit = request.pagination["limit"]
+    #parse into a dictionary
+    for i in qres:
+        #get columns name of query
+        re_result = re.search("SELECT (.*)\n",query)
+        types = re_result.group(1).strip(" ").split("?")[1:]
 
-    data = [
-        {"year": 2016, "period": "1"},
-        {"year": 2016, "period": "2"},
-        {"year": 2016, "period": "TAV"},
-    ]
+        data = dict(zip(types, i))
+        return data
 
-    return jsonify(page=page, offset=offset, limit=limit, data=data)
-
-
-# GET /courses
-@app.route("/courses", methods=["GET"])
-@paginate()
-def courses():
-    page = request.pagination["page"]
-    offset = request.pagination["offset"]
-    limit = request.pagination["limit"]
-
-    # Period filtering
-    year = request.args.get("year")
-    period = request.args.get("period")
-    if year and period:
-        # Filter by period
-        pass
-    else:
-        # By default do not take care about timeline
-        pass
-
-    # Search options
-    initials = request.args.get("initials")
-    name = request.args.get("name")
-    nrc = request.args.get("nrc")
-    category = request.args.get("category")
-    teacher = request.args.get("teacher")
-    campus = request.args.get("campus")
-    school = request.args.get("school")
-
-    # To satisfy schedule availability
-    include_modules = request.args.get("include_modules")
-    exclude_modules = request.args.get("exclude_modules", [])
-
-    # To satisfy course requisites
-    include_courses = request.args.get("include_courses")
-    exclude_courses = request.args.get("exclude_courses", [])
-
-    data = []
-
-    return jsonify(page=page, offset=offset, limit=limit, data=data)
-
-
-# GET /courses/MAT1610
-@app.route("/courses/<course_id>", methods=["GET"])
-def course(course_id):
-
-    # Return name and faculty
-    queryBasic = """
-    SELECT ?name ?faculty
-    WHERE {{
-    ?x <http://cocke.ing.puc.cl/resource#initial> '{0}'.
-    ?x <http://cocke.ing.puc.cl/resource#name_c> ?name.
-    ?x <http://cocke.ing.puc.cl/resource#faculty> ?faculty.
-    }}
-    """.format(course_id)
-
-    # Returns all requisites
-    #  Total length of the requisite group and one of those members
-    # Ex:
-    #( ?total = 1 ) ( ?initial = "FIS1533" )
-    #( ?total = 1 ) ( ?initial = "IEE2113" )
-    #( ?total = 2 ) ( ?initial = "FIZ0221" )
-    #( ?total = 2 ) ( ?initial = "IEE2113" )
-    # is: [["FIS1533"], ["IEE2113"], ["FIZ0221", "IEE2113" ] ]
-    queryRequires = """
-    SELECT  ?initial ?total
-    WHERE{{
-       {{SELECT ?requires (COUNT(?b) as ?total )
-        WHERE {{
-        ?x <http://cocke.ing.puc.cl/resource#initial> '{0}'.
-        ?x <http://cocke.ing.puc.cl/resource#requires> ?requires.
-        ?requires ?a ?b.
-        }}
-        GROUP BY ?requires
-        }}
-    ?requires ?j ?k.
-    ?k <http://cocke.ing.puc.cl/resource#initial> ?initial.
-    }}
-    ORDER BY ?requires
-    """.format(course_id)
-
-    queryEquivalent = """
-    SELECT  ?initial
-    WHERE{{
-    ?x <http://cocke.ing.puc.cl/resource#initial> '{0}' .
-    ?x <http://cocke.ing.puc.cl/resource#equivalent> ?k.
-    ?k <http://cocke.ing.puc.cl/resource#initial> ?initial.
-    }}
-    """.format(course_id)
-
-    data = dict()
-    return jsonify(data=data)
-
-
-# GET /courses/MAT1610/periods
-@app.route("/courses/<course_id>/periods", methods=["GET"])
-@paginate()
-def course_periods(course_id):
-    page = request.pagination["page"]
-    offset = request.pagination["offset"]
-    limit = request.pagination["limit"]
-
-    data = []
-
-    return jsonify(page=page, offset=offset, limit=limit, data=data)
-
-
-# GET /courses/MAT1610/periods/2016/2/sections
-@app.route("/courses/<course_id>/periods/<year>/<period>/sections", methods=["GET"])
-@paginate()
-def course_sections(course_id, year, period):
-    page = request.pagination["page"]
-    offset = request.pagination["offset"]
-    limit = request.pagination["limit"]
-
-    data = []
-
-    return jsonify(page=page, offset=offset, limit=limit, data=data)
-
-
-# GET /courses/MAT1610/periods/2016/2/sections/1
-@app.route("/courses/<course_id>/periods/<year>/<period>/sections/<section_id>", methods=["GET"])
-def course_section(course_id, year, period, section_id):
-    data = dict()
-    return jsonify(data=data)
-
-
-# GET /courses/MAT1610/periods/2016/2/sections/1/teachers
-@app.route("/courses/<course_id>/periods/<year>/<period>/sections/<section_id>/teachers", methods=["GET"])
-@paginate()
-def course_section_teachers(course_id, year, period, section_id):
-    page = request.pagination["page"]
-    offset = request.pagination["offset"]
-    limit = request.pagination["limit"]
-
-    data = []
-
-    return jsonify(page=page, offset=offset, limit=limit, data=data)
-
-
-# GET /courses/MAT1610/requisites
-@app.route("/courses/<course_id>/requisites", methods=["GET"])
-@paginate()
-def course_requisites(course_id):
-    page = request.pagination["page"]
-    offset = request.pagination["offset"]
-    limit = request.pagination["limit"]
-
-    data = []
-
-    return jsonify(page=page, offset=offset, limit=limit, data=data)
-
-
-# GET /courses/MAT1610/corequisites
-@app.route("/courses/<course_id>/corequisites", methods=["GET"])
-@paginate()
-def course_corequisites(course_id):
-    page = request.pagination["page"]
-    offset = request.pagination["offset"]
-    limit = request.pagination["limit"]
-
-    data = []
-
-    return jsonify(page=page, offset=offset, limit=limit, data=data)
-
-
-# GET /courses/MAT1610/opens
-@app.route("/courses/<course_id>/opens", methods=["GET"])
-@paginate()
-def course_opens(course_id):
-    page = request.pagination["page"]
-    offset = request.pagination["offset"]
-    limit = request.pagination["limit"]
-
-    data = []
-
-    return jsonify(page=page, offset=offset, limit=limit, data=data)
-
-
-@app.route("/triples", methods=["GET"])
-@paginate()
-def resource_names():
-    page = request.pagination["page"]
-    offset = request.pagination["offset"]
-    limit = request.pagination["limit"]
-
-    # See qres (Result) documentation:
-    # http://rdflib.readthedocs.io/en/stable/apidocs/rdflib.html#rdflib.query.Result
-    qres = graph.query("""
-        SELECT * WHERE {{ ?s ?p ?o. }} LIMIT {limit} OFFSET {offset}
-    """.format(limit=limit, offset=offset))
-
-    # data = []
-    # for s, p, o in qres:
-    #     data.append({"s": s, "p": p, "o": o})
-
-    data = [{"s": s, "p": p, "o": o} for s, p, o in qres]
-
-    # To JSON
-    # json_string = qres.serialize(format="json")
-    # print("JSON:", json_string)
-
-    return jsonify(page=page, offset=offset, limit=limit, data=data)
+    return dict()
